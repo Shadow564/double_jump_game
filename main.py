@@ -131,8 +131,8 @@ while True:
     
     # adds the difference between the players coordinate and the scrolls displacement
     # tbh this isn't really my idea; credit goes to DaFluffyPotato; he is a god w/ pygame
-    scroll[0] += int((player.x - scroll[0] - 120) / 2)
-    scroll[1] += int((player.y - scroll[1] - 120) / 2)
+    scroll[0] += int((player.x - scroll[0] - 120) / 4)
+    scroll[1] += int((player.y - scroll[1] - 120) / 4)
     
     if num % 60 == 0:  # every second
         images = generates_new_images(spliced, 12)  # generates the masks to put on the collision rects
