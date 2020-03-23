@@ -20,6 +20,8 @@ class Player(Entity):  # inherited from Entity class, check entity class.py file
         self.is_jumping = False  # bool
         self.velocity = [0, 0]  # [0]: x; [1]: y
         self.direction = "right"  # direction facing, left or right
+        self.health = 4
+        self.damage_timer = 0
 
     def handle_veloctiy(self, event, rects):
         # kinda self explained
@@ -64,6 +66,18 @@ class Player(Entity):  # inherited from Entity class, check entity class.py file
         
         # takes the velocity determined and the collision rects, and moves the player
         self.move(self.velocity, rects)
+
+    def sight_dangers(self, danger_rects):
+        if self.damage_timer > 0:
+            self.damage_timer -= 1
+        print(self.damage_timer)
+        for rect in danger_rects:
+            if self.hitbox.colliderect(rect):
+                if self.damage_timer == 0:
+                    self.health -= 1
+                    self.damage_timer = 60
+        if self.health == 0:
+            self.health = 4
 
     def handle_animations(self, animations):
         # this if to else switch determines the action based on player variables

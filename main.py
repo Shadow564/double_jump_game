@@ -5,6 +5,7 @@ import json
 from player_class import Player
 from block_filling_test import splice_rects, i_hate_coding, generate_images
 import random as r
+from enemy_classes import ShooterBlock
 
 clock = py.time.Clock()  # maintains fps & junk
 
@@ -80,13 +81,17 @@ animations = load_animations()
 
 player = Player((WIDTH / SCALE) / 2, (HEIGHT / SCALE) / 2, 1, 0, 5, 12)
 scroll = [0, 0]
+health_img = py.image.load("data/health.png")
 
 with open("data/levels/export_level", "r") as f:
     data = json.load(f)
 
 export_rects = []
+export_shooters = []
 for rect in data["collision_rects"]:
     export_rects.append(py.Rect(rect))
+for shoot in data["objects"]["shooter"]:
+    export_shooters.append(ShooterBlock(shoot[0], shoot[1], 0, 0, 12, 12, shoot[2]))
 
 # splits the rects into points [x, y] based on each point being a square with scale (12) sides
 spliced = splice_rects(export_rects, 12)
@@ -96,7 +101,7 @@ base_colors = [(127, 127, 127), (0, 0, 0)]
 color_scheme = [[(255, 128, 164), (255, 38, 116)],  # pink
                 [(191, 255, 60), (16, 210, 117)],  # green
                 [(148, 33, 106), (67, 0, 103)],  # purple
-                [(104, 174, 212), (35, 73, 117)]]  # blue
+                [(0, 120, 153), (0, 40, 89)]]  # blue
 
 num = -1  # temporary counter
 
@@ -112,12 +117,17 @@ def generates_new_images(rect_points, scale):
     return step_2
 
 
+collision_rects = []
+collision_rects.extend(export_rects)
+collision_rects.extend([shoot.hitbox for shoot in export_shooters])
+
+
 while True:
     num += 1
     
     display.fill((255, 255, 255))
     
-    player.handle_veloctiy(event, export_rects)
+    player.handle_veloctiy(event, collision_rects)
     player.handle_animations(animations)
     
     player.draw_player(display, scroll)
@@ -129,15 +139,34 @@ while True:
     # takes a all given events from mouse & keyboard and puts them in class object
     event.take_events()
     
+    for shooter in export_shooters:
+        shooter.pass_timer(collision_rects)
+    
     # adds the difference between the players coordinate and the scrolls displacement
     # tbh this isn't really my idea; credit goes to DaFluffyPotato; he is a god w/ pygame
     scroll[0] += int((player.x - scroll[0] - 120) / 4)
     scroll[1] += int((player.y - scroll[1] - 120) / 4)
     
+    damage_rects = []
+    for shooter in export_shooters:
+        for proj in shooter.projectiles:
+            damage_rects.append((proj[0], proj[1], 4, 4))
+    player.sight_dangers(damage_rects)
+    
+    if K_d in event.downs:
+        player.health -= 1
+    
     if num % 60 == 0:  # every second
         images = generates_new_images(spliced, 12)  # generates the masks to put on the collision rects
     for part in images:
         display.blit(part[1], (part[0][0] - scroll[0], part[0][1] - scroll[1]))
+    for shooter in export_shooters:
+        shooter.draw_projectiles(display, scroll)
+        shooter.draw_shooter(display, scroll)
+        
+    for i in range(player.health):
+        py.draw.rect(display, (255, 128, 164), (6 + i * 12, 6, 12, 6))
+        display.blit(health_img, (6 + i * 12, 6))
 
     screen.blit(py.transform.scale(display, (WIDTH, HEIGHT)), (0, 0))  # scales display up to screen
     py.display.update()
