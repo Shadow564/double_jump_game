@@ -6,6 +6,7 @@ from player_class import Player
 from block_filling_test import splice_rects, i_hate_coding, generate_images
 import random as r
 from enemy_classes import ShooterBlock
+from functions import load_image
 
 clock = py.time.Clock()  # maintains fps & junk
 
@@ -49,7 +50,7 @@ def load_animations():
     :return: dictionary of animations and timings
     """
     animations = {}
-    for dir in ["player"]:  # cycles through each directory in the animations folder
+    for dir in ["player", "shoot_block_proj"]:  # cycles through each directory in the animations folder
         with open(f"data/animations/{dir}/{dir}_timings", "r") as f:
             data = json.load(f)
         # the json file in each dir is used to load each needed animation
@@ -60,15 +61,15 @@ def load_animations():
             given json entry in a list, and that list is going to be added to the frames of the animation
 
             """
-            animations[cycle] = []  # the list used to represent the animation
+            animations[f"{dir}_{cycle}"] = []  # the list used to represent the animation
             frames = []  # list of image, duration pairs
             for i in range(0, len(data[cycle][0])):  # cycles from 0 to the number of duration's in the file
-                image = py.image.load(f"data/animations/{dir}/{dir}_{cycle}/player_{cycle}{i}.png").convert_alpha()
+                image = py.image.load(f"data/animations/{dir}/{dir}_{cycle}/{dir}_{cycle}{i}.png").convert_alpha()
                 # the upper line loads the image in the action's image dir that corresponds with the duration
                 duration = data[cycle][0][i]  # the entry in the json file
                 frames.append([image, duration])  # adds a list of the image and duration to the frames
-            animations[cycle].append(frames)  # adds the list of image, dur pairs
-            animations[cycle].append(data[cycle][1])
+            animations[f"{dir}_{cycle}"].append(frames)  # adds the list of image, dur pairs
+            animations[f"{dir}_{cycle}"].append(data[cycle][1])
             """
             the line prior adds the second half of the json entry onto the animation
             currently, this is unused but is being included to allow for a future animation tag system
@@ -78,10 +79,11 @@ def load_animations():
 
 
 animations = load_animations()
+print(animations)
 
 player = Player((WIDTH / SCALE) / 2, (HEIGHT / SCALE) / 2, 1, 0, 5, 12)
 scroll = [0, 0]
-health_img = py.image.load("data/health.png")
+health_img = load_image("health.png")
 
 with open("data/levels/export_level", "r") as f:
     data = json.load(f)
@@ -107,9 +109,9 @@ num = -1  # temporary counter
 
 
 # generates new images to put over the rects
-def generates_new_images(rect_points, scale):
+def generates_new_images(rect_points, scale, surface):
     step_1 = i_hate_coding(rect_points, scale)
-    step_2 = generate_images(step_1)
+    step_2 = generate_images(step_1, surface)
     for part in step_2:
         color_set = r.choice(color_scheme)
         part[1] = swap_color(part[1], base_colors[0], color_set[0])
@@ -121,16 +123,24 @@ collision_rects = []
 collision_rects.extend(export_rects)
 collision_rects.extend([shoot.hitbox for shoot in export_shooters])
 
-
 while True:
     num += 1
     
     display.fill((255, 255, 255))
+
+    damage_rects = []
+    for shooter in export_shooters:
+        for proj in shooter.projectiles:
+            damage_rects.append(proj.hitbox)
     
-    player.handle_veloctiy(event, collision_rects)
-    player.handle_animations(animations)
+    if player.action != "dead":
+        player.handle_veloctiy(event, collision_rects)
+        player.handle_animations(animations)
+        player.sight_dangers(damage_rects)
+        player.draw_player(display, scroll)
     
-    player.draw_player(display, scroll)
+    if player.action == "dead":
+        player.die(display, scroll)
     
     # temporarily prevents out of bounds falling by giving the player an upward boost in velocity
     if player.hitbox.y > 240:
@@ -147,27 +157,21 @@ while True:
     scroll[0] += int((player.x - scroll[0] - 120) / 4)
     scroll[1] += int((player.y - scroll[1] - 120) / 4)
     
-    damage_rects = []
-    for shooter in export_shooters:
-        for proj in shooter.projectiles:
-            damage_rects.append((proj[0], proj[1], 4, 4))
-    player.sight_dangers(damage_rects)
-    
     if K_d in event.downs:
         player.health -= 1
     
     if num % 60 == 0:  # every second
-        images = generates_new_images(spliced, 12)  # generates the masks to put on the collision rects
+        images = generates_new_images(spliced, 12, display)  # generates the masks to put on the collision rects
     for part in images:
         display.blit(part[1], (part[0][0] - scroll[0], part[0][1] - scroll[1]))
     for shooter in export_shooters:
-        shooter.draw_projectiles(display, scroll)
+        shooter.draw_projectiles(display, scroll, animations)
         shooter.draw_shooter(display, scroll)
-        
+    
     for i in range(player.health):
         py.draw.rect(display, (255, 128, 164), (6 + i * 12, 6, 12, 6))
         display.blit(health_img, (6 + i * 12, 6))
-
+    
     screen.blit(py.transform.scale(display, (WIDTH, HEIGHT)), (0, 0))  # scales display up to screen
     py.display.update()
     clock.tick(60)  # FPS 60

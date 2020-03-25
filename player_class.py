@@ -1,6 +1,8 @@
 from pygame.locals import *
-from entity_class import Entity
+from entity_class import Entity, Particle
 import pygame as py
+from functions import flip, rotate, load_image
+from math import pi
 
 
 class Player(Entity):  # inherited from Entity class, check entity class.py file
@@ -22,6 +24,8 @@ class Player(Entity):  # inherited from Entity class, check entity class.py file
         self.direction = "right"  # direction facing, left or right
         self.health = 4
         self.damage_timer = 0
+        self.particles = []
+        self.dir = "player"
 
     def handle_veloctiy(self, event, rects):
         # kinda self explained
@@ -36,6 +40,8 @@ class Player(Entity):  # inherited from Entity class, check entity class.py file
         
         # resets jump variables, the != 1 is to prevent the 1st frame from reseting the jump
         if self.collisions["bottom"] and self.jumps != 1:
+            if self.jumps == 2:
+                self.health = 0
             self.jumps = 0
             self.velocity[1] = 0
             self.is_jumping = False
@@ -70,14 +76,37 @@ class Player(Entity):  # inherited from Entity class, check entity class.py file
     def sight_dangers(self, danger_rects):
         if self.damage_timer > 0:
             self.damage_timer -= 1
-        print(self.damage_timer)
         for rect in danger_rects:
             if self.hitbox.colliderect(rect):
                 if self.damage_timer == 0:
                     self.health -= 1
                     self.damage_timer = 60
         if self.health == 0:
+            self.action = "dead"
+            self.animation_timer = 0
+    
+    def die(self, surface, scroll):
+        dead_img = load_image("dead_head.png")
+        if self.animation_timer == 0:
+            small_img = load_image("particles/small_death.png")
+            large_img = load_image("particles/large_death.png")
+            part1 = Particle(self.x + 2, self.y + 4, small_img, 3 * pi / 4, 2, 0.25, 20)
+            part2 = Particle(self.x + 5, self.y + 4, small_img, pi / 4, 2, 0.25, 20)
+            part3 = Particle(self.x + 2, self.y + 7, large_img, 3 * pi / 4, 2, 0.5, 40)
+            part4 = Particle(self.x + 4, self.y + 6, large_img, pi / 4, 2, 0.5, 40)
+            self.particles = [part1, part2, part3, part4]
+        elif self.animation_timer == 300:
+            self.action = "idle"
+            self.animation_timer = 0
+            self.changed_action = True
+            self.set_pos((100, 100))
             self.health = 4
+        else:
+            for part in self.particles:
+                part.turn()
+                part.draw_particle(surface, scroll)
+        self.animation_timer += 1
+        surface.blit(rotate(dead_img, self.animation_timer * 8), (self.x - scroll[0], self.y - (self.animation_timer * 4) - scroll[1]))
 
     def handle_animations(self, animations):
         # this if to else switch determines the action based on player variables
@@ -108,7 +137,3 @@ class Player(Entity):  # inherited from Entity class, check entity class.py file
             surface.blit(self.image, (int(self.x - scroll[0]), int(self.y - scroll[1])))
         elif self.direction == "left":
             surface.blit(flip(self.image), (int(self.x - scroll[0]), int(self.y - scroll[1])))
-
-
-def flip(surface):  # flips an image horizontally
-    return py.transform.flip(surface, True, False)

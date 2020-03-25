@@ -1,9 +1,6 @@
 import random as r
 import pygame as py
-
-
-def rotate(image, angle):  # degrees, neg is cw
-    return py.transform.rotate(image, angle)
+from functions import rotate, load_image_convert
 
 
 def splice_rects(rects, scale):
@@ -109,13 +106,12 @@ def i_hate_coding(rects, scale):
     return blocks
 
 
-def generate_images(broken):
+def generate_images(broken, surface):
     # turns the list of blocks into images
-    square_img = py.image.load("data/square.png").convert()
-    line_img = py.image.load("data/line.png").convert()
-    big_square_img = py.image.load("data/big_square.png").convert()
-    L_img = py.image.load("data/L.png").convert()
-    L_img = py.image.load("data/L.png").convert()
+    square_img = load_image_convert("square.png", surface)
+    line_img = load_image_convert("line.png", surface)
+    big_square_img = load_image_convert("big_square.png", surface)
+    L_img = load_image_convert("L.png", surface)
 
     image_placements = []
     for block in broken:
