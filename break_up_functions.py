@@ -1,5 +1,4 @@
 import random as r
-import pygame as py
 from functions import rotate, load_image_convert
 
 
@@ -23,7 +22,7 @@ def splice_rects(rects, scale):
     return points
         
 
-def i_hate_coding(rects, scale):
+def form_blocks(rects, scale):
     """
     takes the list of points and breaks it up into on of four blocks
     a square block of scale size

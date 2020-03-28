@@ -73,14 +73,9 @@ class Player(Entity):  # inherited from Entity class, check entity class.py file
         # takes the velocity determined and the collision rects, and moves the player
         self.move(self.velocity, rects)
 
-    def sight_dangers(self, danger_rects):
+    def handle_health(self):
         if self.damage_timer > 0:
             self.damage_timer -= 1
-        for rect in danger_rects:
-            if self.hitbox.colliderect(rect):
-                if self.damage_timer == 0:
-                    self.health -= 1
-                    self.damage_timer = 60
         if self.health == 0:
             self.action = "dead"
             self.animation_timer = 0
@@ -99,7 +94,7 @@ class Player(Entity):  # inherited from Entity class, check entity class.py file
             self.action = "idle"
             self.animation_timer = 0
             self.changed_action = True
-            self.set_pos((100, 100))
+            self.set_pos_point((100, 100))
             self.health = 4
         else:
             for part in self.particles:

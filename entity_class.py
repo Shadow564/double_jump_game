@@ -19,7 +19,7 @@ def load_animations():
     :return: dictionary of animations and timings
     """
     animations = {}
-    for dir in ["player", "shoot_block_proj"]:  # cycles through each directory in the animations folder
+    for dir in ["player", "shoot_block_proj", "glob"]:  # cycles through each directory in the animations folder
         with open(f"data/animations/{dir}/{dir}_timings", "r") as f:
             data = json.load(f)
         # the json file in each dir is used to load each needed animation
@@ -33,7 +33,7 @@ def load_animations():
             animations[f"{dir}_{cycle}"] = []  # the list used to represent the animation
             frames = []  # list of image, duration pairs
             for i in range(0, len(data[cycle][0])):  # cycles from 0 to the number of duration's in the file
-                image = py.image.load(f"data/animations/{dir}/{dir}_{cycle}/player_{cycle}{i}.png").convert_alpha()
+                image = py.image.load(f"data/animations/{dir}/{dir}_{cycle}/{dir}_{cycle}{i}.png").convert_alpha()
                 # the upper line loads the image in the action's image dir that corresponds with the duration
                 duration = data[cycle][0][i]  # the entry in the json file
                 frames.append([image, duration])  # adds a list of the image and duration to the frames
@@ -72,11 +72,17 @@ class Entity:
         self.collisions = {'top': False, 'bottom': False, 'right': False, 'left': False}
         self.dir = None
         
-    def set_pos(self, pos):
+    def set_pos_point(self, pos):
         self.x = pos[0]
         self.y = pos[1]
         self.hitbox.x = pos[0] + self.offset[0]
         self.hitbox.y = pos[1] + self.offset[1]
+    
+    def set_pos_hitbox(self, pos):
+        self.hitbox.x = pos[0]
+        self.hitbox.y = pos[1]
+        self.x = self.hitbox.x - self.offset[0]
+        self.y = self.hitbox.y - self.offset[1]
     
     def shift(self, velocity):
         self.hitbox.x += int(velocity[0])

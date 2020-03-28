@@ -3,7 +3,7 @@ from event_class import EventKeep
 # from text_class import TextBox
 from pygame.locals import *
 import json
-from block_filling_test import rotate
+from functions import rotate, point_rect_collision
 
 clock = py.time.Clock()
 
@@ -24,7 +24,7 @@ real_c = [0, 0]  # list keeping track of the TRUE mouse value
 fake_c = [0, 0]  # list keeping track of mouse value locked onto multiple of 12
 
 blocks = []
-objects = {"shooter": []}
+objects = {"shooter": [], "glob": []}
 
 
 def lock_cursors(base_c, mod_c, scale):
@@ -112,11 +112,6 @@ using = "block"
 
 shooter_direction = "right"
 
-
-def point_rect_collision(point, rect):
-    return rect[0] <= point[0] <= rect[0] + rect[2] and rect[1] <= point[1] <= rect[1] + rect[3]
-
-
 arrow_img = py.image.load("data/arrow.png")
 
 selected = None
@@ -156,11 +151,16 @@ while True:
             shoot = [fake_c[0] + h_bar.parse * 12, fake_c[1] + v_bar.parse * 12, shooter_direction]
             print(shoot)
             objects["shooter"].append(shoot)
+        elif using == "glob":
+            glob = [int(round(real_c[0] + h_bar.parse * 12)), fake_c[1] + 5 + v_bar.parse * 12]
+            objects["glob"].append(glob)
             
     if K_b in event.downs:  # block
         using = "block"
     elif K_n in event.downs:  # shooter
         using = "shooter"
+    elif K_m in event.downs:
+        using = "glob"
     if not event.left_click and growing_spot is not None and using == "block":  # 2nd cond prevents continual attempts to build a block
         growing_lock = False
         new_block = []
@@ -188,9 +188,9 @@ while True:
             if point_rect_collision((fake_c[0] + (h_bar.parse * 12), fake_c[1] + (v_bar.parse * 12)), rect):
                 blocks.remove(rect)
     
-    if K_LEFT in event.downs:
+    if K_a in event.downs:
         shooter_direction = "left"
-    elif K_RIGHT in event.downs:
+    elif K_d in event.downs:
         shooter_direction = "right"
     
     if K_LCTRL in event.keys and K_z in event.downs:
@@ -202,25 +202,42 @@ while True:
     if K_e in event.downs:
         export(blocks, objects)
     
-    if K_s in event.downs:
-        selected = None
-    
-    if K_LEFT in event.downs and selected.parse > -h_bar.growth[0]:
-        h_bar.parse -= 1
-    elif K_RIGHT in event.downs and selected.parse < h_bar.growth[1]:
-        h_bar.parse += 1
-    elif K_UP in event.downs and selected.parse > -v_bar.growth[0]:
-        v_bar.parse -= 1
-    elif K_DOWN in event.downs and selected.parse < v_bar.growth[1]:
-        v_bar.parse += 1
+    if K_LEFT in event.downs:
+        if h_bar.parse > -h_bar.growth[0]:
+            h_bar.parse -= 1
+        else:
+            h_bar.grow(-1)
+            h_bar.parse -= 1
+    elif K_RIGHT in event.downs:
+        if h_bar.parse < h_bar.growth[1]:
+            h_bar.parse += 1
+        else:
+            h_bar.grow(1)
+            h_bar.parse += 1
+    if K_UP in event.downs:
+        if v_bar.parse > -v_bar.growth[0]:
+            v_bar.parse -= 1
+        else:
+            v_bar.grow(-1)
+            v_bar.parse -= 1
+    elif K_DOWN in event.downs:
+        if v_bar.parse < v_bar.growth[1]:
+            v_bar.parse += 1
+        else:
+            v_bar.grow(1)
+            v_bar.parse += 1
         
     # print(f"parse {v_bar.parse}")
     # print(f"growth {v_bar.growth}")
+    
+    print(objects["glob"])
     
     for block in blocks:
         py.draw.rect(display, (0, 0, 0), (block[0] - h_bar.parse * 12, block[1] - v_bar.parse * 12, block[2], block[3]))
     for shooter in objects["shooter"]:
         display.blit(shooter_img if shooter[2] == "right" else rotate(shooter_img, 180), (shooter[0] - h_bar.parse * 12, shooter[1] - v_bar.parse * 12))
+    for glob in objects["glob"]:
+        py.draw.rect(display, (122, 0, 93), [glob[0], glob[1], 10, 7])
 
     if using == "block":
         py.draw.rect(display, (0, 0, 255), (fake_c[0], fake_c[1], 12, 12))
@@ -229,6 +246,8 @@ while True:
             display.blit(shooter_img, (fake_c[0], fake_c[1]))
         elif shooter_direction == "left":
             display.blit(rotate(shooter_img, 180), (fake_c[0], fake_c[1]))
+    elif using == "glob":
+        py.draw.rect(display, (122, 0, 93), [real_c[0], fake_c[1] + 5, 10, 7])
         
     py.draw.rect(display, (128, 128, 128), (240, 240, 8, 8))
     py.draw.rect(display, (192, 192, 192), (0, 240, 240, 8))
