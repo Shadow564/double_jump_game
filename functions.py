@@ -14,8 +14,7 @@ def load_image(path):
 
 
 def load_image_convert(path, surface):
-    comparison_surf = surface
-    return py.image.load(f"data/{path}").convert()
+    return py.image.load(f"data/{path}").convert(surface)
 
 
 def point_rect_collision(point, rect):

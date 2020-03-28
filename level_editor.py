@@ -237,7 +237,7 @@ while True:
     for shooter in objects["shooter"]:
         display.blit(shooter_img if shooter[2] == "right" else rotate(shooter_img, 180), (shooter[0] - h_bar.parse * 12, shooter[1] - v_bar.parse * 12))
     for glob in objects["glob"]:
-        py.draw.rect(display, (122, 0, 93), [glob[0], glob[1], 10, 7])
+        py.draw.rect(display, (122, 0, 93), [glob[0] - h_bar.parse * 12, glob[1] - v_bar.parse * 12, 10, 7])
 
     if using == "block":
         py.draw.rect(display, (0, 0, 255), (fake_c[0], fake_c[1], 12, 12))
